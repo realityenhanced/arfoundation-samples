@@ -7,10 +7,6 @@ using UnityEngine.XR.ARFoundation;
 public class SessionManager : MonoBehaviour
 {
     // Settings
-    [Tooltip("The ARSession to use")]
-    [SerializeField]
-    private ARSession m_arSession;
-
     [Tooltip("The animation used to notify the user to move the device")]
     [SerializeField]
     private Animator m_moveDeviceAnimation;
@@ -34,8 +30,11 @@ public class SessionManager : MonoBehaviour
 
     private void Start()
     {
-        //TODO: Check settings
-        // ..
+        if (m_moveDeviceAnimation == null || m_tapToPlaceAnimation == null 
+            || m_measurementController == null)
+        {
+            throw new System.InvalidOperationException("All script inputs need to be passed in to SessionManager");
+        }
     }
 
     private void OnEnable()
@@ -57,7 +56,10 @@ public class SessionManager : MonoBehaviour
 
     private void ARSystemStateChanged(ARSystemStateChangedEventArgs obj)
     {
-        HandleARState(obj.state);
+        if (gameObject.activeSelf)
+        {
+            HandleARState(obj.state);
+        }
     }
 
     void Update()
@@ -103,7 +105,7 @@ public class SessionManager : MonoBehaviour
 
     private void StartTapToPlaceUX()
     {
-        if (!m_isTapToPlaceUXActive)
+        if (!m_isTapToPlaceUXActive && m_tapToPlaceAnimation != null)
         {
             m_tapToPlaceAnimation.SetTrigger(c_fadeOnAnim);
             m_isTapToPlaceUXActive = true;
@@ -112,7 +114,7 @@ public class SessionManager : MonoBehaviour
 
     private void RemoveTapToPlaceUX()
     {
-        if (m_isTapToPlaceUXActive)
+        if (m_isTapToPlaceUXActive && m_tapToPlaceAnimation != null)
         {
             m_tapToPlaceAnimation.SetTrigger(c_fadeOffAnim);
             m_isTapToPlaceUXActive = false;
@@ -121,7 +123,7 @@ public class SessionManager : MonoBehaviour
 
     private void StartMoveDeviceUX()
     {
-        if (!m_isMoveDeviceUXActive)
+        if (!m_isMoveDeviceUXActive && m_moveDeviceAnimation != null)
         {
             m_moveDeviceAnimation.SetTrigger(c_fadeOnAnim);
             m_isMoveDeviceUXActive = true;
@@ -130,7 +132,7 @@ public class SessionManager : MonoBehaviour
 
     private void RemoveMoveDeviceUX()
     {
-        if (m_isMoveDeviceUXActive)
+        if (m_isMoveDeviceUXActive && m_moveDeviceAnimation != null)
         {
             m_moveDeviceAnimation.SetTrigger(c_fadeOffAnim);
             m_isMoveDeviceUXActive = false;
