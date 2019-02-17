@@ -84,15 +84,6 @@ public class MeasurementController : MonoBehaviour
         }
         s_rayCastHits.Clear();
 
-        if (m_isMeasurementInProgress)
-        {
-            // If the user is in the middle of measuring, 
-            // update the line and length text.
-            m_currentLineRenderer.SetPosition(1, m_cursor.transform.position);
-            UpdateMeasurementText();
-        }
-
-        // TODO: Add a text in initial screen to "Tap to place endpoint"
         // On a tap, place an endpoint object at the cursor.
         if (Input.touchCount > 0 && Input.GetTouch(0).phase == TouchPhase.Began)
         {
@@ -112,8 +103,17 @@ public class MeasurementController : MonoBehaviour
             }
             else
             {
+                UpdateMeasurementText(false /*Place text at center of measurement line*/);
                 StopMeasurementMode();
             }
+        }
+
+        if (m_isMeasurementInProgress)
+        {
+            // If the user is in the middle of measuring, 
+            // update the line and length text.
+            m_currentLineRenderer.SetPosition(1, m_cursor.transform.position);
+            UpdateMeasurementText(true /*Place text near cursor*/);
         }
     }
 
@@ -130,17 +130,29 @@ public class MeasurementController : MonoBehaviour
     {
         // If a measurement is in progress, cleanup.
         CancelCurrentMeasurement();
+        DisableCursor();
+    }
+
+    private void OnEnable()
+    {
+        EnableCursor();
     }
 
     // HELPERS
     void EnableCursor()
     {
-        m_cursor.GetComponent<Renderer>().material.color = Color.green;
+        SetCursorColor(Color.green);
     }
 
     void DisableCursor()
     {
-        m_cursor.GetComponent<Renderer>().material.color = Color.red;
+        SetCursorColor(Color.red);
+    }
+
+    void SetCursorColor(Color c)
+    {
+        var cursorCenter = m_cursor.transform.GetChild(0);
+        cursorCenter.GetComponent<Renderer>().material.color = c;
     }
 
     void StartMeasurementMode()
@@ -207,15 +219,34 @@ public class MeasurementController : MonoBehaviour
         return distance.ToString("0.##") + "m";
     }
 
-    // Updates the value & placement of the text object to be at the center of the measurement line.
-    void UpdateMeasurementText()
+    // Updates the value & placement of the text object.
+    void UpdateMeasurementText(bool placeNearCursor)
     {
-        var cameraForward = Camera.current.transform.forward;
-        var rotationToFaceCamera = Quaternion.LookRotation(cameraForward);
         m_currentTextField.SetText(GetCurrentDistance());
-        var center = (m_cursor.transform.position + m_currentEndpoint.transform.position) / 2;
-        m_currentMeasurementText.transform.SetPositionAndRotation(center, rotationToFaceCamera);
 
-        // TODO: Face camera, but be parallel to line
+        // Place the text on the cursor by default.
+        Vector3 textPos = m_cursor.transform.position;
+        Quaternion textRot;
+
+        if (placeNearCursor)
+        {
+            // Place the length text at a fixed distance in front of the camera.
+            textPos = Camera.current.transform.position + Camera.current.transform.forward * 0.9f;
+
+            // Face the camera.
+            var cameraForward = Camera.current.transform.forward;
+            textRot = Quaternion.LookRotation(cameraForward);
+        }
+        else
+        {
+            // Set the text at the center of the line.
+            textPos = (textPos + m_currentEndpoint.transform.position) / 2;
+
+            // Rotate the text's x-axis to be parallel to the measurement line.
+            var target = m_currentEndpoint.transform.position - m_cursor.transform.position;
+            textRot = Quaternion.FromToRotation(-Vector3.right, target);
+        }
+
+        m_currentMeasurementText.transform.SetPositionAndRotation(textPos, textRot);
     }
 }

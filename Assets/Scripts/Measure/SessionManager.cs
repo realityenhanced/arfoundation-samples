@@ -57,7 +57,10 @@ public class SessionManager : MonoBehaviour
 
     private void ARSystemStateChanged(ARSystemStateChangedEventArgs obj)
     {
-        HandleARState(obj.state);
+        if (obj != null)
+        {
+            HandleARState(obj.state);
+        }
     }
 
     void Update()
