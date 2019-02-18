@@ -25,6 +25,9 @@ using TMPro;
 /// AR Tracking Loss/Gain:
 /// - The SessionManager is responsible for detecting the AR system state
 ///   displaying relevant UX and enabling/disabing the MeasurementController component.
+/// 
+/// App Focus Management:
+/// - If a measurement is in progress, the measurement operation is reset on focus loss.
 /// </remarks>
 public class MeasurementController : MonoBehaviour
 {
