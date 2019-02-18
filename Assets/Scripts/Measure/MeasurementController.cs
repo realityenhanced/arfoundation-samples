@@ -7,6 +7,25 @@ using TMPro;
 /// <summary>
 /// Manages the UX for measuring real world objects.
 /// </summary>
+/// <remarks>
+/// Cursor Management:
+/// A ray is cast into the real world from the center of the phone's screen
+/// to detect a hit point.
+/// If no hit points are detected, the cursor is colored red
+/// to denote an invalid cursor position.
+/// If a hit point is detected, the cursor is turned green.
+/// 
+/// Measuring real world objects:
+/// - When a tap is detected, a cube is placed at the cursor's location and
+///   a line is rendered from the cube to the current cursor position.
+/// - The length is displayed based on the distance between the cursor and the endpoint.
+/// - On the second tap, another endpoint is placed and the length is displayed at the center of
+///   the measured line.
+/// 
+/// AR Tracking Loss/Gain:
+/// - The SessionManager is responsible for detecting the AR system state
+///   displaying relevant UX and enabling/disabing the MeasurementController component.
+/// </remarks>
 public class MeasurementController : MonoBehaviour
 {
     // Settings
@@ -18,7 +37,7 @@ public class MeasurementController : MonoBehaviour
     [SerializeField]
     private GameObject m_cursor;
 
-    [Tooltip("The prefab to be used as the endpoint of a measurement")]
+    [Tooltip("The prefab to be used as the endpoints of a measurement")]
     [SerializeField]
     private GameObject m_endpointPrefab;
 
@@ -26,7 +45,7 @@ public class MeasurementController : MonoBehaviour
     [SerializeField]
     private Material m_lineMaterial;
 
-    [Tooltip("The prefab to be used to display the measured length as text")]
+    [Tooltip("The prefab to be used to display the measured length")]
     [SerializeField]
     private GameObject m_lengthMeasureText;
 
@@ -93,8 +112,8 @@ public class MeasurementController : MonoBehaviour
             if (!m_isMeasurementInProgress)
             {
                 // The user has started a measurement operation.
-                // Add a line renderer & text renderer, that tracks the visualization of the measurement,
-                // to the starting endpoint.
+                // Add a line renderer & text renderer to the starting endpoint, 
+                // that tracks the visualization of the measurement.
                 AddLineRendererToGameObject(endpoint);
                 AddMeasurementTextToGameObject(endpoint);
                 m_currentEndpoint = endpoint;
@@ -103,7 +122,8 @@ public class MeasurementController : MonoBehaviour
             }
             else
             {
-                UpdateMeasurementText(false /*Place text at center of measurement line*/);
+                // Place text at center of measurement line.
+                UpdateMeasurementText(false);
                 StopMeasurementMode();
             }
         }
@@ -113,7 +133,9 @@ public class MeasurementController : MonoBehaviour
             // If the user is in the middle of measuring, 
             // update the line and length text.
             m_currentLineRenderer.SetPosition(1, m_cursor.transform.position);
-            UpdateMeasurementText(true /*Place text near cursor*/);
+
+            // Place text near cursor.
+            UpdateMeasurementText(true);
         }
     }
 
@@ -139,17 +161,17 @@ public class MeasurementController : MonoBehaviour
     }
 
     // HELPERS
-    void EnableCursor()
+    private void EnableCursor()
     {
         SetCursorColor(Color.green);
     }
 
-    void DisableCursor()
+    private void DisableCursor()
     {
         SetCursorColor(Color.red);
     }
 
-    void SetCursorColor(Color c)
+    private void SetCursorColor(Color c)
     {
         if (m_cursor != null)
         {
@@ -158,12 +180,12 @@ public class MeasurementController : MonoBehaviour
         }
     }
 
-    void StartMeasurementMode()
+    private void StartMeasurementMode()
     {
         m_isMeasurementInProgress = true;
     }
 
-    void StopMeasurementMode()
+    private void StopMeasurementMode()
     {
         m_isMeasurementInProgress = false;
         m_currentTextField = null;
@@ -172,7 +194,7 @@ public class MeasurementController : MonoBehaviour
         m_currentEndpoint = null;
     }
 
-    void CancelCurrentMeasurement()
+    private void CancelCurrentMeasurement()
     {
         if (m_isMeasurementInProgress)
         {
@@ -183,7 +205,7 @@ public class MeasurementController : MonoBehaviour
         }
     }
 
-    void AddLineRendererToGameObject(GameObject go)
+    private void AddLineRendererToGameObject(GameObject go)
     {
         m_currentLineRenderer = go.AddComponent<LineRenderer>();
         m_currentLineRenderer.material = m_lineMaterial;
@@ -198,11 +220,9 @@ public class MeasurementController : MonoBehaviour
         m_currentLineRenderer.SetPosition(1, go.transform.position);
     }
 
-    void AddMeasurementTextToGameObject(GameObject go)
+    private void AddMeasurementTextToGameObject(GameObject go)
     {
-        var cameraForward = Camera.current.transform.forward;
-        var rotationToFaceCamera = Quaternion.LookRotation(cameraForward);
-        m_currentMeasurementText = Instantiate(m_lengthMeasureText, go.transform.position, rotationToFaceCamera);
+        m_currentMeasurementText = Instantiate(m_lengthMeasureText, go.transform.position, Quaternion.identity);
         m_currentMeasurementText.transform.SetParent(go.transform);
 
         m_currentTextField = m_currentMeasurementText.GetComponentInChildren<TextMeshPro>();
@@ -210,7 +230,7 @@ public class MeasurementController : MonoBehaviour
 
     // Returns the length to be displayed based on the distance between the cursor
     // and the endpoint object that is currently set.
-    string GetCurrentDistance()
+    private string GetCurrentDistance()
     {
         float distance = Vector3.Distance(m_cursor.transform.position, m_currentEndpoint.transform.position);
         if (distance < 1.0f)
@@ -223,11 +243,11 @@ public class MeasurementController : MonoBehaviour
     }
 
     // Updates the value & placement of the text object.
-    void UpdateMeasurementText(bool placeNearCursor)
+    private void UpdateMeasurementText(bool placeNearCursor)
     {
         m_currentTextField.SetText(GetCurrentDistance());
 
-        // The text will alway face the camera due to the Billboard component.
+        // The text will always face the camera due to the Billboard component attached to the prefab.
         Vector3 textPos;
         if (placeNearCursor)
         {

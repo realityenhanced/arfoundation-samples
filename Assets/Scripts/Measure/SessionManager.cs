@@ -3,6 +3,8 @@ using UnityEngine.XR.ARFoundation;
 
 /// <summary>
 /// Manages the UX to be shown when AR tracking is lost or gained.
+/// This class enables the MeasurementController component passed to it
+/// when the AR tracking is active and disables it when AR tracking is lost.
 /// </summary>
 public class SessionManager : MonoBehaviour
 {
@@ -56,10 +58,7 @@ public class SessionManager : MonoBehaviour
 
     private void ARSystemStateChanged(ARSystemStateChangedEventArgs obj)
     {
-        if (gameObject.activeSelf)
-        {
-            HandleARState(obj.state);
-        }
+        HandleARState(obj.state);
     }
 
     void Update()
@@ -88,11 +87,9 @@ public class SessionManager : MonoBehaviour
                 m_measurementController.enabled = true;
                 break;
             case ARSystemState.Unsupported:
-            // Notify user that AR is not supported.
-            //break;
+            // [FUTURE IMPROVEMENT] Notify user that AR is not supported.
             case ARSystemState.NeedsInstall:
-            // Notify user that an install is needed for AR support.
-            //break;
+            // [FUTURE IMPROVEMENT] Notify user that an install is needed for AR support.
             default:
                 // The AR Session has not started or lost tracking.
                 // Update the UX & Disable measurements.
